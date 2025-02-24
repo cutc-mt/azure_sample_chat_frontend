@@ -26,6 +26,7 @@ class APIClient:
             "context": {
                 "thread_id": thread_id,
                 "overrides": {
+                    "prompt_template": self.config.get('prompt_template', ''),  # プロンプトテンプレートを追加
                     "retrieval_mode": self.config.get('retrieval_mode', 'hybrid'),
                     "top": self.config.get('top_k', 5),
                     "temperature": self.config.get('temperature', 0.7),

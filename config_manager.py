@@ -14,7 +14,8 @@ class ConfigManager:
             'temperature': 0.7,
             'semantic_ranker': True,
             'semantic_captions': True,
-            'followup_questions': True
+            'followup_questions': True,
+            'prompt_template': ''  # プロンプトテンプレートのデフォルト値
         }
 
     @staticmethod

@@ -119,10 +119,19 @@ def main():
         top_k = st.slider("Top K Documents", 1, 20, 5)
         temperature = st.slider("Temperature", 0.0, 1.0, 0.7)
 
-        with st.expander("Advanced Settings"):
+        st.subheader("Advanced Settings")
+        with st.expander("Advanced Settings", expanded=False):
             semantic_ranker = st.checkbox("Use Semantic Ranker", value=True)
             semantic_captions = st.checkbox("Use Semantic Captions", value=True)
             followup_questions = st.checkbox("Suggest Followup Questions", value=True)
+
+            st.subheader("Prompt Template")
+            prompt_template = st.text_area(
+                "Prompt Template",
+                value=st.session_state.config.get('prompt_template', ''),
+                help="Enter the prompt template to be used for generating responses",
+                height=150
+            )
 
         if st.button("Save Settings"):
             new_config = {
@@ -133,10 +142,12 @@ def main():
                 'temperature': temperature,
                 'semantic_ranker': semantic_ranker,
                 'semantic_captions': semantic_captions,
-                'followup_questions': followup_questions
+                'followup_questions': followup_questions,
+                'prompt_template': prompt_template
             }
             ConfigManager.save_config(new_config)
             st.session_state.config = new_config
+            st.session_state.api_client = APIClient(new_config)  # APIクライアントを新しい設定で再初期化
             st.success("Settings saved successfully!")
 
     # メインチャットインターフェース
