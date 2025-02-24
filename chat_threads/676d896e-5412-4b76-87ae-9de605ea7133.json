@@ -1,0 +1,36 @@
+[
+  {
+    "role": "user",
+    "content": "フロー"
+  },
+  {
+    "role": "assistant",
+    "content": "スレッド 676d896e-5412-4b76-87ae-9de605ea7133 の応答: フロー",
+    "context": {
+      "thread_id": "676d896e-5412-4b76-87ae-9de605ea7133",
+      "data_points": [
+        {
+          "text": "これはモックの応答です。"
+        }
+      ],
+      "chat_history": "1. user: フロー"
+    }
+  },
+  {
+    "role": "user",
+    "content": "ヘイロー"
+  },
+  {
+    "role": "assistant",
+    "content": "スレッド 676d896e-5412-4b76-87ae-9de605ea7133 の応答: ヘイロー",
+    "context": {
+      "thread_id": "676d896e-5412-4b76-87ae-9de605ea7133",
+      "data_points": [
+        {
+          "text": "これはモックの応答です。"
+        }
+      ],
+      "chat_history": "1. user: フロー\n2. assistant: スレッド 676d896e-5412-4b76-87ae-9de605ea7133 の応答: フロー\n3. user: ヘイロー"
+    }
+  }
+]

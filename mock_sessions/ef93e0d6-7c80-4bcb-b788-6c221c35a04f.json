@@ -1,0 +1,23 @@
+[
+  {
+    "role": "user",
+    "content": "へろー"
+  },
+  {
+    "role": "assistant",
+    "content": "スレッド ef93e0d6-7c80-4bcb-b788-6c221c35a04f の応答: へろー",
+    "context": {
+      "thread_id": "ef93e0d6-7c80-4bcb-b788-6c221c35a04f",
+      "data_points": [
+        {
+          "text": "これはモックの応答です。"
+        }
+      ],
+      "chat_history": "1. user: へろー"
+    }
+  },
+  {
+    "role": "user",
+    "content": "ハロー"
+  }
+]

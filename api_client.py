@@ -6,6 +6,7 @@ class APIClient:
     def __init__(self, config):
         self.config = config
         self.session = self._create_session()
+        self.session_state = None
 
     def _create_session(self):
         session = requests.Session()
@@ -32,7 +33,8 @@ class APIClient:
                     "semantic_captions": self.config.get('semantic_captions', True),
                     "suggest_followup_questions": self.config.get('followup_questions', True)
                 }
-            }
+            },
+            "session_state": self.session_state
         }
 
     def validate_url(self, url):
@@ -58,7 +60,12 @@ class APIClient:
                 timeout=30
             )
             response.raise_for_status()
-            return response.json()
+            response_data = response.json()
+
+            # セッション状態を更新
+            self.session_state = response_data.get("session_state")
+
+            return response_data
 
         except requests.exceptions.RequestException as e:
             error_msg = f"API request failed: {str(e)}"
