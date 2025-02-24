@@ -3,6 +3,7 @@ from chat_manager import ChatManager
 from config_manager import ConfigManager
 from api_client import APIClient
 import json
+from datetime import datetime
 
 def initialize_session_state():
     if 'chat_history' not in st.session_state:
@@ -18,10 +19,46 @@ def main():
     )
 
     initialize_session_state()
+    chat_manager = ChatManager()
 
     # Sidebar configuration
     with st.sidebar:
         st.title("⚙️ Settings")
+
+        # チャット履歴の管理
+        st.subheader("💾 Chat History Management")
+        col1, col2 = st.columns(2)
+
+        # エクスポートボタン
+        with col1:
+            if st.button("Export Chat"):
+                exported_data = chat_manager.export_history(st.session_state.chat_history)
+                if exported_data:
+                    # ダウンロードボタンを表示
+                    filename = f"chat_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+                    st.download_button(
+                        label="Download Export",
+                        data=exported_data,
+                        file_name=filename,
+                        mime="application/json"
+                    )
+
+        # インポートファイルアップローダー
+        with col2:
+            uploaded_file = st.file_uploader("Import Chat", type=['json'])
+            if uploaded_file:
+                try:
+                    import_data = json.load(uploaded_file)
+                    imported_history = chat_manager.import_history(import_data)
+                    if imported_history:
+                        st.session_state.chat_history = imported_history
+                        st.success("Chat history imported successfully!")
+                    else:
+                        st.error("Failed to import chat history")
+                except Exception as e:
+                    st.error(f"Error importing file: {str(e)}")
+
+        st.divider()
 
         # Proxy Configuration
         st.subheader("Proxy Settings")
