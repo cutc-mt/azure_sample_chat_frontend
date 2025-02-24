@@ -127,18 +127,18 @@ def main():
 
             st.subheader("Context Overrides")
             context_overrides_prompt = st.text_area(
-                "Context Overrides - Prompt Template",
+                "Override Context Response",
                 value=st.session_state.config.get('context_overrides_prompt', ''),
-                help="Enter the prompt template to override the default one in the context",
+                help="Override how the AI processes the context before generating a response. Leave empty to use default behavior.",
                 height=150,
                 key="context_overrides_prompt"
             )
 
-            st.subheader("Prompt Template")
+            st.subheader("Main Prompt Template")
             prompt_template = st.text_area(
-                "Prompt Template",
+                "Chat Response Template",
                 value=st.session_state.config.get('prompt_template', ''),
-                help="Enter the prompt template to be used for generating responses",
+                help="Configure how the AI generates its final response. This is the main template that controls the conversation style.",
                 height=150
             )
 
