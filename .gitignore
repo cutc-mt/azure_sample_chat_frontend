@@ -15,6 +15,7 @@ venv/
 chat_threads/
 chat_threads.json
 mock_sessions/
+attached_assets/
 
 # System
 .DS_Store
