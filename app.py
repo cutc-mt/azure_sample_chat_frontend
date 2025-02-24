@@ -239,10 +239,16 @@ def main():
                                     if "chat_history" in response["context"]:
                                         st.text(response["context"]["chat_history"])
 
-                        # デバッグモードの場合、セッション状態を表示
+                        # デバッグモードの場合、APIリクエスト/レスポンス情報を表示
                         if st.session_state.debug_mode:
-                            with st.expander("🔍 Response Session State", expanded=True):
-                                st.json(response.get("session_state"))
+                            with st.expander("🔍 API Debug Info", expanded=True):
+                                col1, col2 = st.columns(2)
+                                with col1:
+                                    st.subheader("Request")
+                                    st.json(st.session_state.api_client.last_request)
+                                with col2:
+                                    st.subheader("Response")
+                                    st.json(st.session_state.api_client.last_response)
 
             except Exception as e:
                 st.error(f"An error occurred: {str(e)}")

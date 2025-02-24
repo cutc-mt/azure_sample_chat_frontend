@@ -7,7 +7,10 @@ class APIClient:
         self.config = config
         self.session = self._create_session()
         self.session_states = {}  # スレッドIDごとのセッション状態を管理
+        self.last_request = None  # デバッグ用：最後のリクエスト内容
+        self.last_response = None  # デバッグ用：最後のレスポンス内容
 
+    # 既存のメソッドは変更なし
     def _create_session(self):
         session = requests.Session()
         if self.config.get('proxy_url'):
@@ -26,7 +29,7 @@ class APIClient:
             "context": {
                 "thread_id": thread_id,
                 "overrides": {
-                    "prompt_template": self.config.get('prompt_template', ''),  # プロンプトテンプレートを追加
+                    "prompt_template": self.config.get('prompt_template', ''),
                     "retrieval_mode": self.config.get('retrieval_mode', 'hybrid'),
                     "top": self.config.get('top_k', 5),
                     "temperature": self.config.get('temperature', 0.7),
@@ -54,6 +57,9 @@ class APIClient:
 
         try:
             request_data = self._prepare_request_data(chat_history, thread_id)
+            # デバッグ用：リクエスト内容を保存
+            self.last_request = request_data
+
             response = self.session.post(
                 self.config['api_endpoint'],
                 json=request_data,
@@ -62,6 +68,9 @@ class APIClient:
             )
             response.raise_for_status()
             response_data = response.json()
+
+            # デバッグ用：レスポンス内容を保存
+            self.last_response = response_data
 
             # スレッドIDごとにセッション状態を更新
             if thread_id:
