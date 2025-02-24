@@ -73,3 +73,8 @@ class APIClient:
             return {"error": error_msg}
         except json.JSONDecodeError:
             return {"error": "Invalid JSON response from API"}
+
+    def update_session_state(self, thread_id, session_state):
+        """スレッドのセッション状態を更新"""
+        if thread_id:
+            self.session_states[thread_id] = session_state

@@ -71,7 +71,10 @@ def main():
                 ):
                     st.session_state.current_thread_id = thread['id']
                     st.session_state.chat_history = chat_manager.get_thread_history(thread['id'])
-                    # スレッドを切り替えても、APIClientのセッション状態は保持
+                    # スレッドを切り替えたとき、保存されているセッション状態を復元
+                    session_state = chat_manager.get_thread_session_state(thread['id'])
+                    if session_state:
+                        st.session_state.api_client.update_session_state(thread['id'], session_state)
                     st.rerun()
             with col2:
                 if st.button("🗑️", key=f"delete_{thread['id']}", help="Delete this thread"):
@@ -203,6 +206,13 @@ def main():
                         st.session_state.current_thread_id,
                         st.session_state.chat_history
                     )
+
+                    # セッション状態を保存
+                    if response.get("session_state"):
+                        chat_manager.update_thread_session_state(
+                            st.session_state.current_thread_id,
+                            response["session_state"]
+                        )
 
                     with st.chat_message("assistant"):
                         st.write(message["content"])

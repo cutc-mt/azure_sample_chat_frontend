@@ -27,7 +27,8 @@ class ChatManager:
             'id': thread_id,
             'title': title or f"Chat {timestamp}",
             'created_at': timestamp,
-            'updated_at': timestamp
+            'updated_at': timestamp,
+            'session_state': None  # セッション状態の初期化
         }
 
         # スレッド情報を保存
@@ -75,6 +76,23 @@ class ChatManager:
                 thread['updated_at'] = datetime.now().isoformat()
                 self.save_thread_info(thread)
                 break
+
+    def update_thread_session_state(self, thread_id, session_state):
+        """スレッドのセッション状態を更新"""
+        threads = self.list_threads()
+        for thread in threads:
+            if thread['id'] == thread_id:
+                thread['session_state'] = session_state
+                self.save_thread_info(thread)
+                break
+
+    def get_thread_session_state(self, thread_id):
+        """スレッドのセッション状態を取得"""
+        threads = self.list_threads()
+        for thread in threads:
+            if thread['id'] == thread_id:
+                return thread.get('session_state')
+        return None
 
     def delete_thread(self, thread_id):
         """スレッドを削除"""
