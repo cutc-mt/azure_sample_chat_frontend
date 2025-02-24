@@ -14,6 +14,8 @@ def initialize_session_state():
         st.session_state.current_thread_id = None
     if 'chat_manager' not in st.session_state:
         st.session_state.chat_manager = ChatManager()
+    if 'api_client' not in st.session_state:
+        st.session_state.api_client = APIClient(st.session_state.config)
 
 def format_datetime(iso_string):
     """ISO形式の日時文字列を読みやすい形式に変換"""
@@ -43,6 +45,8 @@ def main():
             thread_info = chat_manager.create_thread(new_thread_title)
             st.session_state.current_thread_id = thread_info['id']
             st.session_state.chat_history = []
+            # 新しいスレッドを作成したら、APIClientも新しく初期化
+            st.session_state.api_client = APIClient(st.session_state.config)
             st.success(f"Created new thread: {thread_info['title']}")
             st.rerun()
 
@@ -193,8 +197,7 @@ def main():
                 st.write(prompt)
 
             try:
-                api_client = APIClient(st.session_state.config)
-                response = api_client.send_message(
+                response = st.session_state.api_client.send_message(
                     st.session_state.chat_history,
                     thread_id=st.session_state.current_thread_id
                 )

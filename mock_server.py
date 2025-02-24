@@ -30,15 +30,15 @@ async def chat(request: Request):
         # 最新の質問を取得
         latest_question = messages[-1]["content"] if messages else "質問が見つかりません"
 
-        # やりとりの通番を管理
-        if session_state is None:
+        # セッション状態の管理
+        if not session_state:
             # 新規セッションの場合
             message_counter = 1
             session_state = {"message_counter": message_counter}
         else:
             # 既存セッションの場合
             message_counter = session_state.get("message_counter", 0) + 1
-            session_state["message_counter"] = message_counter
+            session_state = {"message_counter": message_counter}
 
         # 過去のやりとりをフォーマット
         history_text = "\n".join([
