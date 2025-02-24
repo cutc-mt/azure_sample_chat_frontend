@@ -16,6 +16,8 @@ def initialize_session_state():
         st.session_state.chat_manager = ChatManager()
     if 'api_client' not in st.session_state:
         st.session_state.api_client = APIClient(st.session_state.config)
+    if 'debug_mode' not in st.session_state:
+        st.session_state.debug_mode = False
 
 def format_datetime(iso_string):
     """ISO形式の日時文字列を読みやすい形式に変換"""
@@ -35,6 +37,12 @@ def main():
     # サイドバーの設定
     with st.sidebar:
         st.title("⚙️ Settings")
+
+        # デバッグモード設定
+        debug_mode = st.checkbox("🐛 Debug Mode", value=st.session_state.debug_mode)
+        if debug_mode != st.session_state.debug_mode:
+            st.session_state.debug_mode = debug_mode
+            st.rerun()
 
         # チャットスレッド管理
         st.subheader("📑 Chat Threads")
@@ -74,15 +82,16 @@ def main():
                     st.rerun()
 
         # デバッグ情報表示
-        with st.expander("🔍 Debug Info"):
-            st.subheader("Session States")
-            st.json(st.session_state.api_client.session_states)
-            st.subheader("Current Thread ID")
-            st.code(st.session_state.current_thread_id)
+        if st.session_state.debug_mode:
+            with st.expander("🔍 Debug Info", expanded=True):
+                st.subheader("Session States")
+                st.json(st.session_state.api_client.session_states)
+                st.subheader("Current Thread ID")
+                st.code(st.session_state.current_thread_id)
 
         st.divider()
 
-        # その他の設定（既存のコードは変更なし）
+        # その他の設定
         st.subheader("Proxy Settings")
         proxy_url = st.text_input(
             "Proxy URL",
@@ -140,11 +149,12 @@ def main():
             st.caption(f"Current Thread: {thread_info['title']}")
 
             # デバッグ情報表示
-            with st.expander("🔍 Current Thread Debug Info"):
-                st.json({
-                    "thread_id": st.session_state.current_thread_id,
-                    "session_state": st.session_state.api_client.session_states.get(st.session_state.current_thread_id)
-                })
+            if st.session_state.debug_mode:
+                with st.expander("🔍 Current Thread Debug Info", expanded=True):
+                    st.json({
+                        "thread_id": st.session_state.current_thread_id,
+                        "session_state": st.session_state.api_client.session_states.get(st.session_state.current_thread_id)
+                    })
     else:
         st.caption("No thread selected. Please create or select a thread from the sidebar.")
 
@@ -207,6 +217,11 @@ def main():
                                 with st.expander("過去のやりとり"):
                                     if "chat_history" in response["context"]:
                                         st.text(response["context"]["chat_history"])
+
+                        # デバッグモードの場合、セッション状態を表示
+                        if st.session_state.debug_mode:
+                            with st.expander("🔍 Response Session State", expanded=True):
+                                st.json(response.get("session_state"))
 
             except Exception as e:
                 st.error(f"An error occurred: {str(e)}")

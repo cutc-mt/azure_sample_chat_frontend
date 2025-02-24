@@ -1,0 +1,50 @@
+[
+  {
+    "role": "user",
+    "content": "へろー"
+  },
+  {
+    "role": "assistant",
+    "content": "応答 #1: あなたの質問「へろー」に対する応答です。",
+    "context": {
+      "data_points": [
+        {
+          "text": "これはモックの応答です。"
+        }
+      ],
+      "chat_history": "1. user: へろー"
+    }
+  },
+  {
+    "role": "user",
+    "content": "波呂ー"
+  },
+  {
+    "role": "assistant",
+    "content": "応答 #2: あなたの質問「波呂ー」に対する応答です。",
+    "context": {
+      "data_points": [
+        {
+          "text": "これはモックの応答です。"
+        }
+      ],
+      "chat_history": "1. user: へろー\n2. assistant: 応答 #1: あなたの質問「へろー」に対する応答です。\n3. user: 波呂ー"
+    }
+  },
+  {
+    "role": "user",
+    "content": "＠＠"
+  },
+  {
+    "role": "assistant",
+    "content": "応答 #1: あなたの質問「＠＠」に対する応答です。",
+    "context": {
+      "data_points": [
+        {
+          "text": "これはモックの応答です。"
+        }
+      ],
+      "chat_history": "1. user: へろー\n2. assistant: 応答 #1: あなたの質問「へろー」に対する応答です。\n3. user: 波呂ー\n4. assistant: 応答 #2: あなたの質問「波呂ー」に対する応答です。\n5. user: ＠＠"
+    }
+  }
+]
