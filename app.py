@@ -10,6 +10,15 @@ def initialize_session_state():
         st.session_state.chat_history = []
     if 'config' not in st.session_state:
         st.session_state.config = ConfigManager.get_default_config()
+    if 'current_thread_id' not in st.session_state:
+        st.session_state.current_thread_id = None
+    if 'chat_manager' not in st.session_state:
+        st.session_state.chat_manager = ChatManager()
+
+def format_datetime(iso_string):
+    """ISO形式の日時文字列を読みやすい形式に変換"""
+    dt = datetime.fromisoformat(iso_string)
+    return dt.strftime("%Y/%m/%d %H:%M")
 
 def main():
     st.set_page_config(
@@ -19,13 +28,49 @@ def main():
     )
 
     initialize_session_state()
-    chat_manager = ChatManager()
+    chat_manager = st.session_state.chat_manager
 
-    # Sidebar configuration
+    # サイドバーの設定
     with st.sidebar:
         st.title("⚙️ Settings")
 
-        # チャット履歴の管理
+        # チャットスレッド管理
+        st.subheader("📑 Chat Threads")
+
+        # 新規スレッド作成
+        new_thread_title = st.text_input("New Thread Title", placeholder="Enter thread title...")
+        if st.button("Create New Thread"):
+            thread_info = chat_manager.create_thread(new_thread_title)
+            st.session_state.current_thread_id = thread_info['id']
+            st.session_state.chat_history = []
+            st.success(f"Created new thread: {thread_info['title']}")
+            st.rerun()
+
+        # スレッド一覧
+        st.subheader("Threads")
+        threads = chat_manager.list_threads()
+        for thread in sorted(threads, key=lambda x: x['updated_at'], reverse=True):
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                if st.button(
+                    f"📄 {thread['title']}",
+                    key=f"thread_{thread['id']}",
+                    help=f"Created: {format_datetime(thread['created_at'])}\nUpdated: {format_datetime(thread['updated_at'])}"
+                ):
+                    st.session_state.current_thread_id = thread['id']
+                    st.session_state.chat_history = chat_manager.get_thread_history(thread['id'])
+                    st.rerun()
+            with col2:
+                if st.button("🗑️", key=f"delete_{thread['id']}", help="Delete this thread"):
+                    chat_manager.delete_thread(thread['id'])
+                    if st.session_state.current_thread_id == thread['id']:
+                        st.session_state.current_thread_id = None
+                        st.session_state.chat_history = []
+                    st.rerun()
+
+        st.divider()
+
+        # チャット履歴のエクスポート/インポート
         st.subheader("💾 Chat History Management")
         col1, col2 = st.columns(2)
 
@@ -34,7 +79,6 @@ def main():
             if st.button("Export Chat"):
                 exported_data = chat_manager.export_history(st.session_state.chat_history)
                 if exported_data:
-                    # ダウンロードボタンを表示
                     filename = f"chat_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
                     st.download_button(
                         label="Download Export",
@@ -52,6 +96,11 @@ def main():
                     imported_history = chat_manager.import_history(import_data)
                     if imported_history:
                         st.session_state.chat_history = imported_history
+                        if st.session_state.current_thread_id:
+                            chat_manager.save_thread_history(
+                                st.session_state.current_thread_id,
+                                imported_history
+                            )
                         st.success("Chat history imported successfully!")
                     else:
                         st.error("Failed to import chat history")
@@ -60,7 +109,7 @@ def main():
 
         st.divider()
 
-        # Proxy Configuration
+        # その他の設定（既存のコード）
         st.subheader("Proxy Settings")
         proxy_url = st.text_input(
             "Proxy URL",
@@ -68,7 +117,6 @@ def main():
             placeholder="http://proxy.example.com:8080"
         )
 
-        # API Configuration
         st.subheader("API Settings")
         api_endpoint = st.text_input(
             "API Endpoint",
@@ -76,7 +124,6 @@ def main():
             placeholder="https://api.example.com/chat"
         )
 
-        # Search Parameters
         st.subheader("Search Parameters")
         retrieval_mode = st.selectbox(
             "Retrieval Mode",
@@ -85,16 +132,13 @@ def main():
         )
 
         top_k = st.slider("Top K Documents", 1, 20, 5)
-
         temperature = st.slider("Temperature", 0.0, 1.0, 0.7)
 
-        # Advanced Settings
         with st.expander("Advanced Settings"):
             semantic_ranker = st.checkbox("Use Semantic Ranker", value=True)
             semantic_captions = st.checkbox("Use Semantic Captions", value=True)
             followup_questions = st.checkbox("Suggest Followup Questions", value=True)
 
-        # Save Configuration
         if st.button("Save Settings"):
             new_config = {
                 'proxy_url': proxy_url,
@@ -110,8 +154,19 @@ def main():
             st.session_state.config = new_config
             st.success("Settings saved successfully!")
 
-    # Main chat interface
+    # メインチャットインターフェース
     st.title("💬 Proxy Chat")
+
+    # 現在のスレッド情報を表示
+    if st.session_state.current_thread_id:
+        thread_info = next(
+            (t for t in chat_manager.list_threads() if t['id'] == st.session_state.current_thread_id),
+            None
+        )
+        if thread_info:
+            st.caption(f"Current Thread: {thread_info['title']}")
+    else:
+        st.caption("No thread selected. Please create or select a thread from the sidebar.")
 
     # チャット履歴の表示
     for message in st.session_state.chat_history:
@@ -119,7 +174,6 @@ def main():
             st.write(message["content"])
             if message["role"] == "assistant":
                 if "context" in message:
-                    # データポイントとチャット履歴を別々に表示
                     col1, col2 = st.columns(2)
                     with col1:
                         with st.expander("データポイント"):
@@ -131,45 +185,51 @@ def main():
                             if "chat_history" in message["context"]:
                                 st.text(message["context"]["chat_history"])
 
-    # チャット入力
-    if prompt := st.chat_input("Type your message here..."):
-        # ユーザーメッセージ
-        st.session_state.chat_history.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.write(prompt)
+    # チャット入力（スレッドが選択されている場合のみ有効）
+    if st.session_state.current_thread_id:
+        if prompt := st.chat_input("Type your message here..."):
+            st.session_state.chat_history.append({"role": "user", "content": prompt})
+            with st.chat_message("user"):
+                st.write(prompt)
 
-        # 応答を取得
-        try:
-            api_client = APIClient(st.session_state.config)
-            response = api_client.send_message(st.session_state.chat_history)
+            try:
+                api_client = APIClient(st.session_state.config)
+                response = api_client.send_message(st.session_state.chat_history)
 
-            if response.get("error"):
-                st.error(f"Error: {response['error']}")
-            else:
-                message = response["message"]
-                st.session_state.chat_history.append({
-                    "role": message["role"],
-                    "content": message["content"],
-                    "context": response.get("context", {})
-                })
+                if response.get("error"):
+                    st.error(f"Error: {response['error']}")
+                else:
+                    message = response["message"]
+                    st.session_state.chat_history.append({
+                        "role": message["role"],
+                        "content": message["content"],
+                        "context": response.get("context", {})
+                    })
 
-                with st.chat_message("assistant"):
-                    st.write(message["content"])
-                    if response.get("context"):
-                        # データポイントとチャット履歴を別々に表示
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            with st.expander("データポイント"):
-                                if "data_points" in response["context"]:
-                                    for point in response["context"]["data_points"]:
-                                        st.write(point["text"])
-                        with col2:
-                            with st.expander("過去のやりとり"):
-                                if "chat_history" in response["context"]:
-                                    st.text(response["context"]["chat_history"])
+                    # スレッドの履歴を保存
+                    chat_manager.save_thread_history(
+                        st.session_state.current_thread_id,
+                        st.session_state.chat_history
+                    )
 
-        except Exception as e:
-            st.error(f"An error occurred: {str(e)}")
+                    with st.chat_message("assistant"):
+                        st.write(message["content"])
+                        if response.get("context"):
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                with st.expander("データポイント"):
+                                    if "data_points" in response["context"]:
+                                        for point in response["context"]["data_points"]:
+                                            st.write(point["text"])
+                            with col2:
+                                with st.expander("過去のやりとり"):
+                                    if "chat_history" in response["context"]:
+                                        st.text(response["context"]["chat_history"])
+
+            except Exception as e:
+                st.error(f"An error occurred: {str(e)}")
+    else:
+        st.info("Please select or create a thread to start chatting.")
 
 if __name__ == "__main__":
     main()

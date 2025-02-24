@@ -2,48 +2,96 @@ import json
 from datetime import datetime
 import base64
 import os
+import uuid
 
 class ChatManager:
     def __init__(self):
-        self.history_file = "chat_history.json"
-    
-    def save_history(self, history):
-        """Save chat history to file"""
+        self.threads_file = "chat_threads.json"
+        self.threads_dir = "chat_threads"
+        self._ensure_threads_directory()
+
+    def _ensure_threads_directory(self):
+        """スレッド保存用のディレクトリを作成"""
+        if not os.path.exists(self.threads_dir):
+            os.makedirs(self.threads_dir)
+
+    def _get_thread_file_path(self, thread_id):
+        """スレッドファイルのパスを取得"""
+        return os.path.join(self.threads_dir, f"{thread_id}.json")
+
+    def create_thread(self, title=None):
+        """新しいチャットスレッドを作成"""
+        thread_id = str(uuid.uuid4())
+        timestamp = datetime.now().isoformat()
+        thread_info = {
+            'id': thread_id,
+            'title': title or f"Chat {timestamp}",
+            'created_at': timestamp,
+            'updated_at': timestamp
+        }
+
+        # スレッド情報を保存
+        self.save_thread_info(thread_info)
+        # 空の履歴を作成
+        self.save_thread_history(thread_id, [])
+
+        return thread_info
+
+    def save_thread_info(self, thread_info):
+        """スレッド情報を保存"""
+        threads = self.list_threads()
+        threads = [t for t in threads if t['id'] != thread_info['id']]
+        threads.append(thread_info)
+
+        with open(self.threads_file, 'w', encoding='utf-8') as f:
+            json.dump(threads, f, ensure_ascii=False, indent=2)
+
+    def list_threads(self):
+        """全スレッド一覧を取得"""
         try:
-            with open(self.history_file, 'w', encoding='utf-8') as f:
-                json.dump({
-                    'timestamp': datetime.now().isoformat(),
-                    'history': history
-                }, f, ensure_ascii=False, indent=2)
-            return True
-        except Exception as e:
-            print(f"Error saving chat history: {e}")
-            return False
-    
-    def load_history(self):
-        """Load chat history from file"""
-        try:
-            with open(self.history_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                return data.get('history', [])
+            with open(self.threads_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
         except FileNotFoundError:
             return []
-        except Exception as e:
-            print(f"Error loading chat history: {e}")
-            return []
-    
-    def clear_history(self):
-        """Clear chat history"""
+
+    def get_thread_history(self, thread_id):
+        """特定のスレッドの履歴を取得"""
         try:
-            with open(self.history_file, 'w', encoding='utf-8') as f:
-                json.dump({'timestamp': datetime.now().isoformat(), 'history': []}, f)
-            return True
-        except Exception as e:
-            print(f"Error clearing chat history: {e}")
-            return False
+            with open(self._get_thread_file_path(thread_id), 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except FileNotFoundError:
+            return []
+
+    def save_thread_history(self, thread_id, history):
+        """スレッドの履歴を保存"""
+        file_path = self._get_thread_file_path(thread_id)
+        with open(file_path, 'w', encoding='utf-8') as f:
+            json.dump(history, f, ensure_ascii=False, indent=2)
+
+        # 最終更新日時を更新
+        threads = self.list_threads()
+        for thread in threads:
+            if thread['id'] == thread_id:
+                thread['updated_at'] = datetime.now().isoformat()
+                self.save_thread_info(thread)
+                break
+
+    def delete_thread(self, thread_id):
+        """スレッドを削除"""
+        # スレッド履歴ファイルを削除
+        try:
+            os.remove(self._get_thread_file_path(thread_id))
+        except FileNotFoundError:
+            pass
+
+        # スレッド一覧から削除
+        threads = self.list_threads()
+        threads = [t for t in threads if t['id'] != thread_id]
+        with open(self.threads_file, 'w', encoding='utf-8') as f:
+            json.dump(threads, f, ensure_ascii=False, indent=2)
 
     def export_history(self, history, format='json'):
-        """Export chat history to specified format"""
+        """チャット履歴をエクスポート"""
         try:
             export_data = {
                 'timestamp': datetime.now().isoformat(),
@@ -63,7 +111,7 @@ class ChatManager:
             return None
 
     def import_history(self, import_data, format='json'):
-        """Import chat history from specified format"""
+        """チャット履歴をインポート"""
         try:
             if format == 'json':
                 if isinstance(import_data, str):
@@ -76,7 +124,6 @@ class ChatManager:
             else:
                 raise ValueError(f"Unsupported format: {format}")
 
-            # バージョンチェック
             if 'format_version' not in data:
                 raise ValueError("Invalid import data: missing format version")
 
