@@ -2,10 +2,10 @@
   "proxy_url": "",
   "api_endpoint": "http://localhost:8000/chat",
   "retrieval_mode": "hybrid",
-  "top_k": 5,
-  "temperature": 0.7,
+  "top_k": 10,
+  "temperature": 0.21,
   "semantic_ranker": true,
   "semantic_captions": true,
   "followup_questions": true,
-  "prompt_template": "\u3042\u3042\u3042"
+  "prompt_template": "\u3042\u3042\u3042\u3042\u3042"
 }
