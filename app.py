@@ -125,6 +125,15 @@ def main():
             semantic_captions = st.checkbox("Use Semantic Captions", value=True)
             followup_questions = st.checkbox("Suggest Followup Questions", value=True)
 
+            st.subheader("Context Overrides")
+            context_overrides_prompt = st.text_area(
+                "Context Overrides - Prompt Template",
+                value=st.session_state.config.get('context_overrides_prompt', ''),
+                help="Enter the prompt template to override the default one in the context",
+                height=150,
+                key="context_overrides_prompt"
+            )
+
             st.subheader("Prompt Template")
             prompt_template = st.text_area(
                 "Prompt Template",
@@ -143,7 +152,8 @@ def main():
                 'semantic_ranker': semantic_ranker,
                 'semantic_captions': semantic_captions,
                 'followup_questions': followup_questions,
-                'prompt_template': prompt_template
+                'prompt_template': prompt_template,
+                'context_overrides_prompt': context_overrides_prompt
             }
             ConfigManager.save_config(new_config)
             st.session_state.config = new_config
