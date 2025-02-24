@@ -6,7 +6,7 @@ class APIClient:
     def __init__(self, config):
         self.config = config
         self.session = self._create_session()
-        self.session_state = None
+        self.session_states = {}  # スレッドIDごとのセッション状態を管理
 
     def _create_session(self):
         session = requests.Session()
@@ -34,7 +34,7 @@ class APIClient:
                     "suggest_followup_questions": self.config.get('followup_questions', True)
                 }
             },
-            "session_state": self.session_state
+            "session_state": self.session_states.get(thread_id)
         }
 
     def validate_url(self, url):
@@ -62,8 +62,9 @@ class APIClient:
             response.raise_for_status()
             response_data = response.json()
 
-            # セッション状態を更新
-            self.session_state = response_data.get("session_state")
+            # スレッドIDごとにセッション状態を更新
+            if thread_id:
+                self.session_states[thread_id] = response_data.get("session_state")
 
             return response_data
 

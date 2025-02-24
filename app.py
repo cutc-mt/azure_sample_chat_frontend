@@ -63,6 +63,7 @@ def main():
                 ):
                     st.session_state.current_thread_id = thread['id']
                     st.session_state.chat_history = chat_manager.get_thread_history(thread['id'])
+                    # スレッドを切り替えても、APIClientのセッション状態は保持
                     st.rerun()
             with col2:
                 if st.button("🗑️", key=f"delete_{thread['id']}", help="Delete this thread"):
@@ -72,48 +73,16 @@ def main():
                         st.session_state.chat_history = []
                     st.rerun()
 
-        st.divider()
-
-        # チャット履歴のエクスポート/インポート
-        st.subheader("💾 Chat History Management")
-        col1, col2 = st.columns(2)
-
-        # エクスポートボタン
-        with col1:
-            if st.button("Export Chat"):
-                exported_data = chat_manager.export_history(st.session_state.chat_history)
-                if exported_data:
-                    filename = f"chat_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-                    st.download_button(
-                        label="Download Export",
-                        data=exported_data,
-                        file_name=filename,
-                        mime="application/json"
-                    )
-
-        # インポートファイルアップローダー
-        with col2:
-            uploaded_file = st.file_uploader("Import Chat", type=['json'])
-            if uploaded_file:
-                try:
-                    import_data = json.load(uploaded_file)
-                    imported_history = chat_manager.import_history(import_data)
-                    if imported_history:
-                        st.session_state.chat_history = imported_history
-                        if st.session_state.current_thread_id:
-                            chat_manager.save_thread_history(
-                                st.session_state.current_thread_id,
-                                imported_history
-                            )
-                        st.success("Chat history imported successfully!")
-                    else:
-                        st.error("Failed to import chat history")
-                except Exception as e:
-                    st.error(f"Error importing file: {str(e)}")
+        # デバッグ情報表示
+        with st.expander("🔍 Debug Info"):
+            st.subheader("Session States")
+            st.json(st.session_state.api_client.session_states)
+            st.subheader("Current Thread ID")
+            st.code(st.session_state.current_thread_id)
 
         st.divider()
 
-        # その他の設定（既存のコード）
+        # その他の設定（既存のコードは変更なし）
         st.subheader("Proxy Settings")
         proxy_url = st.text_input(
             "Proxy URL",
@@ -169,6 +138,13 @@ def main():
         )
         if thread_info:
             st.caption(f"Current Thread: {thread_info['title']}")
+
+            # デバッグ情報表示
+            with st.expander("🔍 Current Thread Debug Info"):
+                st.json({
+                    "thread_id": st.session_state.current_thread_id,
+                    "session_state": st.session_state.api_client.session_states.get(st.session_state.current_thread_id)
+                })
     else:
         st.caption("No thread selected. Please create or select a thread from the sidebar.")
 

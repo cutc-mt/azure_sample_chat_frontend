@@ -1,0 +1,66 @@
+[
+  {
+    "role": "user",
+    "content": "ヘイヘイ"
+  },
+  {
+    "role": "assistant",
+    "content": "応答 #1: あなたの質問「ヘイヘイ」に対する応答です。",
+    "context": {
+      "data_points": [
+        {
+          "text": "これはモックの応答です。"
+        }
+      ],
+      "chat_history": "1. user: ヘイヘイ"
+    }
+  },
+  {
+    "role": "user",
+    "content": "ホイホイ"
+  },
+  {
+    "role": "assistant",
+    "content": "応答 #2: あなたの質問「ホイホイ」に対する応答です。",
+    "context": {
+      "data_points": [
+        {
+          "text": "これはモックの応答です。"
+        }
+      ],
+      "chat_history": "1. user: ヘイヘイ\n2. assistant: 応答 #1: あなたの質問「ヘイヘイ」に対する応答です。\n3. user: ホイホイ"
+    }
+  },
+  {
+    "role": "user",
+    "content": "フガフガ"
+  },
+  {
+    "role": "assistant",
+    "content": "応答 #3: あなたの質問「フガフガ」に対する応答です。",
+    "context": {
+      "data_points": [
+        {
+          "text": "これはモックの応答です。"
+        }
+      ],
+      "chat_history": "1. user: ヘイヘイ\n2. assistant: 応答 #1: あなたの質問「ヘイヘイ」に対する応答です。\n3. user: ホイホイ\n4. assistant: 応答 #2: あなたの質問「ホイホイ」に対する応答です。\n5. user: フガフガ"
+    }
+  },
+  {
+    "role": "user",
+    "content": "ヘーイ"
+  },
+  {
+    "role": "assistant",
+    "content": "応答 #2: あなたの質問「ヘーイ」に対する応答です。",
+    "context": {
+      "data_points": [
+        {
+          "text": "これはモックの応答です。"
+        }
+      ],
+      "chat_history": "1. user: ヘイヘイ\n2. assistant: 応答 #1: あなたの質問「ヘイヘイ」に対する応答です。\n3. user: ホイホイ\n4. assistant: 応答 #2: あなたの質問「ホイホイ」に対する応答です。\n5. user: フガフガ\n6. assistant: 応答 #3: あなたの質問「フガフガ」に対する応答です。\n7. user: ヘーイ"
+    }
+  }
+]
