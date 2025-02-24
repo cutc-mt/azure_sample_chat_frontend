@@ -125,20 +125,11 @@ def main():
             semantic_captions = st.checkbox("Use Semantic Captions", value=True)
             followup_questions = st.checkbox("Suggest Followup Questions", value=True)
 
-            st.subheader("Context Overrides")
-            context_overrides_prompt = st.text_area(
-                "Override Context Response",
-                value=st.session_state.config.get('context_overrides_prompt', ''),
-                help="Override how the AI processes the context before generating a response. Leave empty to use default behavior.",
-                height=150,
-                key="context_overrides_prompt"
-            )
-
-            st.subheader("Main Prompt Template")
+            st.subheader("Prompt Template")
             prompt_template = st.text_area(
-                "Chat Response Template",
+                "Prompt Template",
                 value=st.session_state.config.get('prompt_template', ''),
-                help="Configure how the AI generates its final response. This is the main template that controls the conversation style.",
+                help="Enter the prompt template to be used for generating responses",
                 height=150
             )
 
@@ -152,8 +143,7 @@ def main():
                 'semantic_ranker': semantic_ranker,
                 'semantic_captions': semantic_captions,
                 'followup_questions': followup_questions,
-                'prompt_template': prompt_template,
-                'context_overrides_prompt': context_overrides_prompt
+                'prompt_template': prompt_template
             }
             ConfigManager.save_config(new_config)
             st.session_state.config = new_config
