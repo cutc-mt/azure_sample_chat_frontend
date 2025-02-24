@@ -1,0 +1,66 @@
+import requests
+import json
+from urllib.parse import urlparse
+
+class APIClient:
+    def __init__(self, config):
+        self.config = config
+        self.session = self._create_session()
+    
+    def _create_session(self):
+        session = requests.Session()
+        if self.config.get('proxy_url'):
+            proxy_url = self.config['proxy_url']
+            if not proxy_url.startswith(('http://', 'https://')):
+                proxy_url = 'http://' + proxy_url
+            session.proxies = {
+                'http': proxy_url,
+                'https': proxy_url
+            }
+        return session
+    
+    def _prepare_request_data(self, chat_history):
+        return {
+            "messages": chat_history,
+            "context": {
+                "overrides": {
+                    "retrieval_mode": self.config.get('retrieval_mode', 'hybrid'),
+                    "top": self.config.get('top_k', 5),
+                    "temperature": self.config.get('temperature', 0.7),
+                    "semantic_ranker": self.config.get('semantic_ranker', True),
+                    "semantic_captions": self.config.get('semantic_captions', True),
+                    "suggest_followup_questions": self.config.get('followup_questions', True)
+                }
+            }
+        }
+    
+    def validate_url(self, url):
+        try:
+            result = urlparse(url)
+            return all([result.scheme, result.netloc])
+        except:
+            return False
+    
+    def send_message(self, chat_history):
+        if not self.config.get('api_endpoint'):
+            raise ValueError("API endpoint not configured")
+        
+        if not self.validate_url(self.config['api_endpoint']):
+            raise ValueError("Invalid API endpoint URL")
+        
+        try:
+            request_data = self._prepare_request_data(chat_history)
+            response = self.session.post(
+                self.config['api_endpoint'],
+                json=request_data,
+                headers={'Content-Type': 'application/json'},
+                timeout=30
+            )
+            response.raise_for_status()
+            return response.json()
+        
+        except requests.exceptions.RequestException as e:
+            error_msg = f"API request failed: {str(e)}"
+            return {"error": error_msg}
+        except json.JSONDecodeError:
+            return {"error": "Invalid JSON response from API"}
