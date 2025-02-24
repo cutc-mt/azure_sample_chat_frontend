@@ -194,7 +194,10 @@ def main():
 
             try:
                 api_client = APIClient(st.session_state.config)
-                response = api_client.send_message(st.session_state.chat_history)
+                response = api_client.send_message(
+                    st.session_state.chat_history,
+                    thread_id=st.session_state.current_thread_id
+                )
 
                 if response.get("error"):
                     st.error(f"Error: {response['error']}")

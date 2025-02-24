@@ -1,0 +1,18 @@
+[
+  {
+    "role": "user",
+    "content": "フロー"
+  },
+  {
+    "role": "assistant",
+    "content": "応答 #3: あなたの質問「フロー」に対する応答です。",
+    "context": {
+      "data_points": [
+        {
+          "text": "これはモックの応答です。"
+        }
+      ],
+      "chat_history": "1. user: ハロー\n2. user: ハロー\n3. assistant: 応答 #1: あなたの質問「ハロー」に対する応答です。\n4. user: へろー\n5. user: フロー"
+    }
+  }
+]

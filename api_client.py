@@ -6,7 +6,7 @@ class APIClient:
     def __init__(self, config):
         self.config = config
         self.session = self._create_session()
-    
+
     def _create_session(self):
         session = requests.Session()
         if self.config.get('proxy_url'):
@@ -18,11 +18,12 @@ class APIClient:
                 'https': proxy_url
             }
         return session
-    
-    def _prepare_request_data(self, chat_history):
+
+    def _prepare_request_data(self, chat_history, thread_id=None):
         return {
             "messages": chat_history,
             "context": {
+                "thread_id": thread_id,
                 "overrides": {
                     "retrieval_mode": self.config.get('retrieval_mode', 'hybrid'),
                     "top": self.config.get('top_k', 5),
@@ -33,23 +34,23 @@ class APIClient:
                 }
             }
         }
-    
+
     def validate_url(self, url):
         try:
             result = urlparse(url)
             return all([result.scheme, result.netloc])
         except:
             return False
-    
-    def send_message(self, chat_history):
+
+    def send_message(self, chat_history, thread_id=None):
         if not self.config.get('api_endpoint'):
             raise ValueError("API endpoint not configured")
-        
+
         if not self.validate_url(self.config['api_endpoint']):
             raise ValueError("Invalid API endpoint URL")
-        
+
         try:
-            request_data = self._prepare_request_data(chat_history)
+            request_data = self._prepare_request_data(chat_history, thread_id)
             response = self.session.post(
                 self.config['api_endpoint'],
                 json=request_data,
@@ -58,7 +59,7 @@ class APIClient:
             )
             response.raise_for_status()
             return response.json()
-        
+
         except requests.exceptions.RequestException as e:
             error_msg = f"API request failed: {str(e)}"
             return {"error": error_msg}
