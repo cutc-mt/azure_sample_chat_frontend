@@ -32,21 +32,24 @@ async def chat(request: Request):
 
         # 通番を増やして応答を生成
         chat_counter += 1
-        response = f"応答 #{chat_counter}: あなたの質問「{latest_question}」に対する応答です。\n\n過去のやりとり:\n"
+        main_response = f"応答 #{chat_counter}: あなたの質問「{latest_question}」に対する応答です。"
 
-        # 過去のやりとりを含める
-        for idx, msg in enumerate(chat_history, 1):
-            response += f"{idx}. {msg['role']}: {msg['content']}\n"
+        # 過去のやりとりを別のセクションにまとめる
+        history_text = "\n".join([
+            f"{idx}. {msg['role']}: {msg['content']}"
+            for idx, msg in enumerate(chat_history, 1)
+        ])
 
         return {
             "message": {
                 "role": "assistant",
-                "content": response
+                "content": main_response
             },
             "context": {
                 "data_points": [
                     {"text": "これはモックの応答です。"}
-                ]
+                ],
+                "chat_history": history_text
             }
         }
     except Exception as e:
