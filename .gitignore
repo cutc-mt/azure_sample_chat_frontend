@@ -11,11 +11,11 @@ venv/
 # Streamlit
 .streamlit/secrets.toml
 
-# Project specific
-chat_threads/
-chat_threads.json
-mock_sessions/
-attached_assets/
+# Project specific data files
+/chat_threads/
+/chat_threads.json
+/mock_sessions/
+/attached_assets/
 
 # System
 .DS_Store
