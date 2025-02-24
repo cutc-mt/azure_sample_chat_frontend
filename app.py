@@ -1,3 +1,18 @@
+from typing import TypedDict, List, Optional, Dict, Any
+
+class MessageDict(TypedDict):
+    role: str
+    content: str
+    context: Optional[Dict[str, Any]]
+
+class DataPoint(TypedDict):
+    text: str
+
+class Context(TypedDict):
+    data_points: List[DataPoint]
+    chat_history: str
+
+# 既存のインポート文は変更なし
 import streamlit as st
 from chat_manager import ChatManager
 from config_manager import ConfigManager
@@ -5,9 +20,12 @@ from api_client import APIClient
 import json
 from datetime import datetime
 
+# チャット履歴の型を定義
+ChatHistory = List[MessageDict]
+
 def initialize_session_state():
     if 'chat_history' not in st.session_state:
-        st.session_state.chat_history = []
+        st.session_state.chat_history: ChatHistory = []
     if 'config' not in st.session_state:
         st.session_state.config = ConfigManager.get_default_config()
     if 'current_thread_id' not in st.session_state:
