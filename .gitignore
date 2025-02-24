@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment
+.env
+.venv/
+venv/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Project specific
+chat_threads/
+chat_threads.json
+mock_sessions/
+
+# System
+.DS_Store
+Thumbs.db
