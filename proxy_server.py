@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 import httpx
 import uvicorn
 from datetime import datetime
+import ssl
 
 # ロギングの設定
 logging.basicConfig(level=logging.INFO)
@@ -56,18 +57,22 @@ async def proxy_handler(request: Request, path: str):
 
         logger.info(f"Incoming request: {request_info}")
 
-        # すべてのリクエストをモックサーバーの/chatエンドポイントに転送
-        target_url = "http://127.0.0.1:8000/chat"
+        # HTTPSクライアントの設定
+        client_settings = {
+            "timeout": httpx.Timeout(30.0),
+            "verify": ssl.CERT_REQUIRED,
+            "follow_redirects": True
+        }
+
+        target_url = f"https://app-backend-itoa3cwpvsjam.azurewebsites.net/chat"
         logger.info(f"Forwarding request to: {target_url}")
 
-        async with httpx.AsyncClient() as client:
-            # 受信したリクエストと同じメソッド、ヘッダー、ボディを使用して転送
+        async with httpx.AsyncClient(**client_settings) as client:
             response = await client.request(
                 method=request.method,
                 url=target_url,
                 headers=headers,
                 content=body,
-                timeout=30.0  # タイムアウトを設定
             )
             response.raise_for_status()
 
@@ -101,6 +106,13 @@ async def proxy_handler(request: Request, path: str):
                 headers=dict(response.headers)
             )
 
+    except httpx.ProxyError as e:
+        logger.error(f"Proxy error details: {str(e)}")
+        error_msg = f"Proxy connection failed: {str(e)}"
+        raise HTTPException(status_code=502, detail=error_msg)
+    except httpx.HTTPStatusError as e:
+        logger.error(f"HTTP status error: {str(e)}")
+        raise HTTPException(status_code=e.response.status_code, detail=str(e))
     except Exception as e:
         logger.error(f"Proxy error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
