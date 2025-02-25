@@ -1,14 +1,15 @@
+import logging
+import json
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from datetime import datetime
-import json
-from typing import Dict, List, Optional
 import uuid
+from typing import Dict, List, Optional
 
 app = FastAPI()
 
-# CORS設定
+# CORS設定を更新
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -24,6 +25,7 @@ sessions: Dict[str, Dict] = {}
 async def chat(request: Request):
     try:
         data = await request.json()
+        print(f"Received request data: {data}")  # デバッグ用ログ
 
         # 受信したメッセージを取得
         messages = data.get("messages", [])
@@ -67,6 +69,8 @@ async def chat(request: Request):
 
         main_response = f"応答 #{session_state['message_counter']}: あなたの質問「{latest_question}」に対する応答です。"
 
+        print(f"Sending response: {main_response}")  # デバッグ用ログ
+
         return {
             "message": {
                 "role": "assistant",
@@ -81,6 +85,7 @@ async def chat(request: Request):
             "session_state": session_state
         }
     except Exception as e:
+        print(f"Error processing request: {str(e)}")  # デバッグ用ログ
         return {
             "message": {
                 "role": "assistant",
@@ -90,4 +95,5 @@ async def chat(request: Request):
         }
 
 if __name__ == "__main__":
+    print("Starting mock server on port 8000...")  # デバッグ用ログ
     uvicorn.run(app, host="0.0.0.0", port=8000)

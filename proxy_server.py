@@ -1,4 +1,5 @@
 import logging
+import json
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 import httpx
@@ -37,6 +38,7 @@ async def proxy_handler(request: Request, path: str):
         request_time = datetime.now().isoformat()
         body = await request.body()
         headers = dict(request.headers)
+        query_params = str(request.query_params)
 
         # センシティブな情報を除外
         if "authorization" in headers:
@@ -47,22 +49,27 @@ async def proxy_handler(request: Request, path: str):
             "timestamp": request_time,
             "method": request.method,
             "path": f"/{path}",
+            "query_params": query_params,
             "headers": headers,
             "body": body.decode() if body else None
         }
 
         logger.info(f"Incoming request: {request_info}")
 
-        # 転送先URLの構築（テスト用にモックサーバーのエンドポイントを使用）
-        target_url = f"http://localhost:8000/{path}"
+        # すべてのリクエストをモックサーバーの/chatエンドポイントに転送
+        target_url = "http://127.0.0.1:8000/chat"
+        logger.info(f"Forwarding request to: {target_url}")
 
         async with httpx.AsyncClient() as client:
+            # 受信したリクエストと同じメソッド、ヘッダー、ボディを使用して転送
             response = await client.request(
                 method=request.method,
                 url=target_url,
                 headers=headers,
-                content=body
+                content=body,
+                timeout=30.0  # タイムアウトを設定
             )
+            response.raise_for_status()
 
             # レスポンス情報を記録
             response_info = {
@@ -81,8 +88,15 @@ async def proxy_handler(request: Request, path: str):
             if len(request_history) > 100:
                 request_history.pop(0)
 
+            # レスポンスの処理
+            try:
+                content = response.json()
+            except json.JSONDecodeError:
+                content = {"text": response.text}
+
+            logger.info(f"Response received: {content}")
             return JSONResponse(
-                content=response.json(),
+                content=content,
                 status_code=response.status_code,
                 headers=dict(response.headers)
             )
