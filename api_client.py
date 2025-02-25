@@ -12,11 +12,11 @@ logging.basicConfig(
 class APIClient:
     def __init__(self, config):
         self.config = config
-        self.logger = logging.getLogger(__name__)  # ロガーの初期化を先に行う
+        self.logger = logging.getLogger(__name__)
         self.session = self._create_session()
-        self.session_states = {}  # スレッドIDごとのセッション状態を管理
-        self.last_request = None  # デバッグ用：最後のリクエスト内容
-        self.last_response = None  # デバッグ用：最後のレスポンス内容
+        self.session_states = {}
+        self.last_request = None
+        self.last_response = None
 
     def _create_session(self):
         session = requests.Session()
@@ -43,43 +43,29 @@ class APIClient:
 
                 self.logger.info(f"Proxy configured: {proxy_url}")
 
-                # SSL証明書の検証設定（オプション）
-                verify_ssl = self.config.get('verify_ssl', True)
-                session.verify = verify_ssl
-                if not verify_ssl:
-                    self.logger.warning("SSL certificate verification is disabled")
-
             except Exception as e:
                 self.logger.error(f"Failed to configure proxy: {str(e)}")
-                # プロキシ設定に失敗した場合は、プロキシなしで続行
                 session.proxies = {}
 
         return session
-
-    def validate_url(self, url):
-        try:
-            result = urlparse(url)
-            return all([result.scheme, result.netloc])
-        except:
-            return False
 
     def send_message(self, chat_history, thread_id=None):
         if not self.config.get('api_endpoint'):
             raise ValueError("API endpoint not configured")
 
-        if not self.validate_url(self.config['api_endpoint']):
-            raise ValueError("Invalid API endpoint URL")
-
         try:
             request_data = self._prepare_request_data(chat_history, thread_id)
-            self.last_request = request_data  # デバッグ用
+            self.last_request = request_data
 
             # プロキシ使用状況のログ出力
             if self.session.proxies:
                 self.logger.info(f"Sending request through proxy: {self.session.proxies}")
 
+            # エンドポイントURLを直接使用
+            api_endpoint = "http://localhost:8000/chat"
+
             response = self.session.post(
-                self.config['api_endpoint'],
+                api_endpoint,
                 json=request_data,
                 headers={'Content-Type': 'application/json'},
                 timeout=30
@@ -87,7 +73,7 @@ class APIClient:
             response.raise_for_status()
             response_data = response.json()
 
-            self.last_response = response_data  # デバッグ用
+            self.last_response = response_data
 
             if thread_id:
                 self.session_states[thread_id] = response_data.get("session_state")
@@ -96,10 +82,6 @@ class APIClient:
 
         except requests.exceptions.ProxyError as e:
             error_msg = f"Proxy connection failed: {str(e)}"
-            self.logger.error(error_msg)
-            return {"error": error_msg}
-        except requests.exceptions.SSLError as e:
-            error_msg = f"SSL verification failed: {str(e)}"
             self.logger.error(error_msg)
             return {"error": error_msg}
         except requests.exceptions.RequestException as e:
@@ -130,6 +112,5 @@ class APIClient:
         }
 
     def update_session_state(self, thread_id, session_state):
-        """スレッドのセッション状態を更新"""
         if thread_id:
             self.session_states[thread_id] = session_state
