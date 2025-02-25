@@ -13,18 +13,16 @@ class APIClient:
     def __init__(self, config):
         self.config = config
         self.logger = logging.getLogger(__name__)
-        self.session = self._create_session()
+        self.session = requests.Session()
         self.session_states = {}
         self.last_request = None
         self.last_response = None
-
-    def _create_session(self):
-        session = requests.Session()
 
         # プロキシ設定の処理
         if self.config.get('proxy_url'):
             try:
                 proxy_url = self.config['proxy_url'].strip()
+                self.logger.info(f"Setting up proxy: {proxy_url}")
 
                 # プロキシURLのスキーム確認と追加
                 if not proxy_url.startswith(('http://', 'https://')):
@@ -36,43 +34,43 @@ class APIClient:
                     raise ValueError(f"Invalid proxy URL format: {proxy_url}")
 
                 # プロキシ設定を適用
-                session.proxies = {
+                self.session.proxies = {
                     'http': proxy_url,
                     'https': proxy_url
                 }
-
-                self.logger.info(f"Proxy configured: {proxy_url}")
+                self.logger.info(f"Proxy configured successfully: {proxy_url}")
 
             except Exception as e:
                 self.logger.error(f"Failed to configure proxy: {str(e)}")
-                session.proxies = {}
-
-        return session
+                self.session.proxies = {}
 
     def send_message(self, chat_history, thread_id=None):
-        if not self.config.get('api_endpoint'):
-            raise ValueError("API endpoint not configured")
-
         try:
             request_data = self._prepare_request_data(chat_history, thread_id)
             self.last_request = request_data
 
-            # プロキシ使用状況のログ出力
+            self.logger.info("Preparing to send request")
             if self.session.proxies:
-                self.logger.info(f"Sending request through proxy: {self.session.proxies}")
+                self.logger.info(f"Using proxy configuration: {self.session.proxies}")
 
-            # エンドポイントURLを直接使用
+            # モックサーバーのエンドポイントに直接リクエスト
             api_endpoint = "http://localhost:8000/chat"
+            self.logger.info(f"Sending request to: {api_endpoint}")
 
+            # プロキシ設定を使用してリクエストを送信
             response = self.session.post(
                 api_endpoint,
                 json=request_data,
-                headers={'Content-Type': 'application/json'},
-                timeout=30
+                headers={
+                    'Content-Type': 'application/json',
+                    'Host': 'localhost:8000'  # 正しいホストヘッダーを設定
+                },
+                timeout=30,
+                allow_redirects=True  # リダイレクトを許可
             )
+
             response.raise_for_status()
             response_data = response.json()
-
             self.last_response = response_data
 
             if thread_id:
@@ -94,6 +92,7 @@ class APIClient:
             return {"error": error_msg}
 
     def _prepare_request_data(self, chat_history, thread_id=None):
+        """リクエストデータの準備"""
         return {
             "messages": chat_history,
             "context": {

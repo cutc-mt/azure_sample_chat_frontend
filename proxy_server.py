@@ -32,8 +32,8 @@ async def clear_history():
     request_history.clear()
     return {"status": "History cleared"}
 
-@app.post("/chat")
-async def proxy_handler(request: Request):
+@app.api_route("/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+async def proxy_handler(request: Request, full_path: str):
     """すべてのリクエストを転送するプロキシハンドラ"""
     try:
         # リクエストの詳細をログに記録
@@ -50,6 +50,7 @@ async def proxy_handler(request: Request):
         request_info = {
             "timestamp": request_time,
             "method": request.method,
+            "full_path": full_path,
             "query_params": query_params,
             "headers": headers,
             "body": body.decode() if body else None
@@ -64,6 +65,11 @@ async def proxy_handler(request: Request):
             "follow_redirects": True
         }
 
+        # リクエストパスをデコード
+        decoded_path = unquote(full_path)
+        logger.info(f"Decoded path: {decoded_path}")
+
+        # モックサーバーへのリクエストを構築
         target_url = "http://localhost:8000/chat"
         logger.info(f"Forwarding request to: {target_url}")
 
