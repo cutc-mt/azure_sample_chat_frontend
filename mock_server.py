@@ -7,6 +7,10 @@ from datetime import datetime
 import uuid
 from typing import Dict, List, Optional
 
+# ロギングの設定
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 app = FastAPI()
 
 # CORS設定を更新
@@ -21,11 +25,24 @@ app.add_middleware(
 # セッション情報を保持する辞書
 sessions: Dict[str, Dict] = {}
 
+@app.get("/")
+async def root():
+    """ルートエンドポイントのハンドラ"""
+    logger.info("Root endpoint accessed")
+    return {"status": "Mock server is running"}
+
 @app.post("/chat")
 async def chat(request: Request):
     try:
+        # リクエストの詳細をログに記録
+        request_headers = dict(request.headers)
+        logger.info(f"Received request with headers: {request_headers}")
+        logger.info(f"Request URL: {request.url}")
+        logger.info(f"Request path: {request.url.path}")
+        logger.info(f"Request method: {request.method}")
+
         data = await request.json()
-        print(f"Received request data: {data}")  # デバッグ用ログ
+        logger.info(f"Received request data: {data}")
 
         # 受信したメッセージを取得
         messages = data.get("messages", [])
@@ -69,9 +86,9 @@ async def chat(request: Request):
 
         main_response = f"応答 #{session_state['message_counter']}: あなたの質問「{latest_question}」に対する応答です。"
 
-        print(f"Sending response: {main_response}")  # デバッグ用ログ
+        logger.info(f"Sending response: {main_response}")
 
-        return {
+        response_data = {
             "message": {
                 "role": "assistant",
                 "content": main_response
@@ -84,8 +101,11 @@ async def chat(request: Request):
             },
             "session_state": session_state
         }
+        logger.info(f"Response data: {response_data}")
+        return response_data
+
     except Exception as e:
-        print(f"Error processing request: {str(e)}")  # デバッグ用ログ
+        logger.error(f"Error processing request: {str(e)}")
         return {
             "message": {
                 "role": "assistant",
@@ -95,5 +115,5 @@ async def chat(request: Request):
         }
 
 if __name__ == "__main__":
-    print("Starting mock server on port 8000...")  # デバッグ用ログ
+    logger.info("Starting mock server on port 8000...")
     uvicorn.run(app, host="0.0.0.0", port=8000)

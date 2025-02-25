@@ -69,7 +69,6 @@ task = "packager.installForAll"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python proxy_server.py"
-waitForPort = 3000
 
 [[ports]]
 localPort = 3000
@@ -82,4 +81,3 @@ externalPort = 80
 [[ports]]
 localPort = 8000
 externalPort = 8000
-exposeLocalhost = true
