@@ -21,20 +21,9 @@ request_history = []
 async def read_root():
     return {"status": "Proxy server is running"}
 
-@app.get("/history")
-async def get_history():
-    """プロキシサーバを経由したリクエストの履歴を取得"""
-    return request_history
-
-@app.post("/clear-history")
-async def clear_history():
-    """リクエスト履歴をクリア"""
-    request_history.clear()
-    return {"status": "History cleared"}
-
-@app.api_route("/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE"])
-async def proxy_handler(request: Request, full_path: str):
-    """すべてのリクエストを転送するプロキシハンドラ"""
+@app.post("/chat")
+async def proxy_chat(request: Request):
+    """チャットリクエストを処理するプロキシハンドラ"""
     try:
         # リクエストの詳細をログに記録
         request_time = datetime.now().isoformat()
@@ -50,7 +39,6 @@ async def proxy_handler(request: Request, full_path: str):
         request_info = {
             "timestamp": request_time,
             "method": request.method,
-            "full_path": full_path,
             "query_params": query_params,
             "headers": headers,
             "body": body.decode() if body else None
@@ -58,27 +46,16 @@ async def proxy_handler(request: Request, full_path: str):
 
         logger.info(f"Incoming request: {request_info}")
 
-        # HTTPSクライアントの設定
-        client_settings = {
-            "timeout": httpx.Timeout(30.0),
-            "verify": ssl.CERT_REQUIRED,
-            "follow_redirects": True
-        }
-
-        # リクエストパスをデコード
-        decoded_path = unquote(full_path)
-        logger.info(f"Decoded path: {decoded_path}")
-
         # モックサーバーへのリクエストを構築
         target_url = "http://localhost:8000/chat"
         logger.info(f"Forwarding request to: {target_url}")
 
-        async with httpx.AsyncClient(**client_settings) as client:
-            response = await client.request(
-                method=request.method,
-                url=target_url,
-                headers=headers,
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                target_url,
                 content=body,
+                headers=headers,
+                timeout=30.0
             )
             response.raise_for_status()
 
@@ -112,16 +89,24 @@ async def proxy_handler(request: Request, full_path: str):
                 headers=dict(response.headers)
             )
 
-    except httpx.ProxyError as e:
-        logger.error(f"Proxy error details: {str(e)}")
-        error_msg = f"Proxy connection failed: {str(e)}"
-        raise HTTPException(status_code=502, detail=error_msg)
     except httpx.HTTPStatusError as e:
         logger.error(f"HTTP status error: {str(e)}")
         raise HTTPException(status_code=e.response.status_code, detail=str(e))
     except Exception as e:
         logger.error(f"Proxy error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/history")
+async def get_history():
+    """プロキシサーバを経由したリクエストの履歴を取得"""
+    return request_history
+
+@app.post("/clear-history")
+async def clear_history():
+    """リクエスト履歴をクリア"""
+    request_history.clear()
+    return {"status": "History cleared"}
+
 
 if __name__ == "__main__":
     logger.info("Starting proxy server on port 3000...")

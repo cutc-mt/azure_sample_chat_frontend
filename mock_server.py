@@ -33,6 +33,7 @@ async def root():
 
 @app.post("/chat")
 async def chat(request: Request):
+    """チャットリクエストを処理するハンドラ"""
     try:
         # リクエストの詳細をログに記録
         request_headers = dict(request.headers)
