@@ -44,17 +44,37 @@ class APIClient:
                 self.logger.error(f"Failed to configure proxy: {str(e)}")
                 self.session.proxies = {}
 
+    def validate_api_endpoint(self, endpoint):
+        """APIエンドポイントのURLを検証"""
+        if not endpoint:
+            return False, "API endpoint is not configured"
+
+        try:
+            parsed = urlparse(endpoint)
+            if not all([parsed.scheme, parsed.netloc]):
+                return False, "Invalid API endpoint URL format"
+            return True, None
+        except Exception as e:
+            return False, f"Invalid API endpoint: {str(e)}"
+
     def send_message(self, chat_history, thread_id=None):
         try:
+            # APIエンドポイントの取得と検証
+            api_endpoint = self.config.get('api_endpoint', '').strip()
+            is_valid, error_msg = self.validate_api_endpoint(api_endpoint)
+            if not is_valid:
+                raise ValueError(error_msg)
+
+            # チャットエンドポイントの確認
+            if not api_endpoint.endswith('/chat'):
+                api_endpoint = f"{api_endpoint.rstrip('/')}/chat"
+
             request_data = self._prepare_request_data(chat_history, thread_id)
             self.last_request = request_data
 
             self.logger.info("Preparing to send request")
             if self.session.proxies:
                 self.logger.info(f"Using proxy configuration: {self.session.proxies}")
-
-            # モックサーバーのエンドポイントに直接リクエスト
-            api_endpoint = "http://localhost:8000/chat"
             self.logger.info(f"Sending request to: {api_endpoint}")
 
             # プロキシ設定を使用してリクエストを送信
@@ -62,8 +82,7 @@ class APIClient:
                 api_endpoint,
                 json=request_data,
                 headers={
-                    'Content-Type': 'application/json',
-                    'Host': 'localhost:8000'  # 正しいホストヘッダーを設定
+                    'Content-Type': 'application/json'
                 },
                 timeout=30,
                 allow_redirects=True  # リダイレクトを許可
