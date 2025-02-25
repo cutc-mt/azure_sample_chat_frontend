@@ -3,14 +3,20 @@ import json
 from urllib.parse import urlparse
 import logging
 
+# ロギングの基本設定
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
 class APIClient:
     def __init__(self, config):
         self.config = config
+        self.logger = logging.getLogger(__name__)  # ロガーの初期化を先に行う
         self.session = self._create_session()
         self.session_states = {}  # スレッドIDごとのセッション状態を管理
         self.last_request = None  # デバッグ用：最後のリクエスト内容
         self.last_response = None  # デバッグ用：最後のレスポンス内容
-        self.logger = logging.getLogger(__name__)
 
     def _create_session(self):
         session = requests.Session()
